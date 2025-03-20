@@ -1,98 +1,37 @@
-// Credenciais
-const VALID_USERNAME = 'ernane';
-const VALID_PASSWORD = 'estudos';
+// Credenciais de teste
+const TEST_CREDENTIALS = {
+    username: 'ernane',
+    password: 'estudos'
+};
 
-// Verifica se o usuário está logado ao carregar a página
-document.addEventListener('DOMContentLoaded', function() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    const currentPage = window.location.pathname;
-    
-    // Redireciona para a página apropriada com base no estado de login
-    if (currentPage.includes('app.html')) {
-        if (!isLoggedIn) {
-            window.location.href = 'index.html';
-        }
-    } else if (currentPage.includes('index.html') || currentPage === '/English-Study-Tracker/') {
-        if (isLoggedIn) {
-            window.location.href = 'app.html';
-        }
-    }
-
-    // Adiciona evento de tecla Enter para login
-    const loginForm = document.querySelector('.login-form');
-    if (loginForm) {
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const errorElement = document.getElementById('login-error');
-
-        // Limpa mensagem de erro quando o usuário começa a digitar
-        usernameInput?.addEventListener('input', () => {
-            errorElement.style.display = 'none';
-        });
-
-        passwordInput?.addEventListener('input', () => {
-            errorElement.style.display = 'none';
-        });
-
-        // Permite login com Enter em qualquer campo
-        loginForm.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
-        });
-    }
-});
-
-// Função de login
 function login() {
-    const username = document.getElementById('username').value.trim();
+    const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const errorElement = document.getElementById('login-error');
-    const loginButton = document.querySelector('.login-form button');
+    const errorMessage = document.getElementById('error-message');
 
-    // Desabilita o botão durante a validação
-    loginButton.disabled = true;
-    loginButton.textContent = 'Verificando...';
+    // Limpa mensagem de erro anterior
+    errorMessage.textContent = '';
 
-    // Simula uma pequena espera para dar feedback visual
-    setTimeout(() => {
-        if (!username || !password) {
-            showError('Por favor, preencha todos os campos');
-        } else if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-            // Login bem sucedido
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('username', username);
-            window.location.href = 'app.html';
+    // Verifica as credenciais
+    if (username === TEST_CREDENTIALS.username && password === TEST_CREDENTIALS.password) {
+        // Armazena o status de login no localStorage
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('username', username);
+        
+        // Redireciona para a página inicial
+        window.location.href = 'app.html';
+    } else {
+        // Exibe mensagem de erro
+        errorMessage.textContent = 'Usuário ou senha incorretos';
+        
+        // Limpa o campo de senha
+        document.getElementById('password').value = '';
+        
+        // Foca no campo de usuário se estiver vazio, senão foca na senha
+        if (!username) {
+            document.getElementById('username').focus();
         } else {
-            // Login falhou
-            showError('Usuário ou senha incorretos');
-            document.getElementById('password').value = ''; // Limpa a senha
+            document.getElementById('password').focus();
         }
-
-        // Reativa o botão
-        loginButton.disabled = false;
-        loginButton.textContent = 'Entrar';
-    }, 500);
-}
-
-// Função para mostrar erro
-function showError(message) {
-    const errorElement = document.getElementById('login-error');
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    
-    // Adiciona classe para animação
-    errorElement.classList.add('shake');
-    
-    // Remove a classe de animação após a animação terminar
-    setTimeout(() => {
-        errorElement.classList.remove('shake');
-    }, 500);
-}
-
-// Função de logout
-function logout() {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('username');
-    window.location.href = 'index.html';
-}
+    }
+} 
