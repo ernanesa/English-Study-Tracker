@@ -9,12 +9,15 @@
 body {
     min-height: 100vh;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Estilos da página de login */
+.login-page body {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Estilos da página de login */
 .login-container {
     background: white;
     padding: 2.5rem;
@@ -89,6 +92,7 @@ button:hover {
     font-size: 0.875rem;
     margin-top: 0.75rem;
     text-align: center;
+    display: none;
 }
 
 /* Animação de fade-in */
@@ -107,14 +111,152 @@ button:hover {
     animation: fadeIn 0.5s ease-out;
 }
 
+/* Estilos do aplicativo principal */
+header {
+    background: white;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+header h1 {
+    color: #1a1a1a;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav ul {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+}
+
+nav a {
+    color: #4a5568;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+nav a:hover {
+    color: #4299e1;
+}
+
+.logout-btn {
+    width: auto;
+    padding: 0.5rem 1rem;
+    background: #e53e3e;
+}
+
+.logout-btn:hover {
+    background: #c53030;
+}
+
+main {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+section {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+section h2 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.add-word, .time-tracker, .add-goal {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.add-word input, .time-tracker input, .add-goal input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.add-word button, .time-tracker button, .add-goal button {
+    width: auto;
+    white-space: nowrap;
+}
+
+.word-item, .history-item, .goal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.word-item button, .history-item button, .goal-item button {
+    width: auto;
+    padding: 0.5rem 1rem;
+    background: #e53e3e;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.skill {
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.skill h3 {
+    color: #4a5568;
+    margin-bottom: 1rem;
+}
+
+.skill input[type="range"] {
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.skill-value {
+    color: #4299e1;
+    font-weight: 500;
+}
+
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: #4a5568;
+}
+
 /* Responsividade */
-@media (max-width: 480px) {
-    .login-container {
-        margin: 1rem;
-        padding: 1.5rem;
+@media (max-width: 768px) {
+    nav ul {
+        gap: 1rem;
     }
 
-    .login-container h1 {
-        font-size: 1.5rem;
+    .add-word, .time-tracker, .add-goal {
+        flex-direction: column;
+    }
+
+    .skills-grid {
+        grid-template-columns: 1fr;
     }
 }
