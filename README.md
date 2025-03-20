@@ -1,6 +1,6 @@
 # English Study Tracker
 
-Um aplicativo web para ajudar você a acompanhar seu progresso no estudo de inglês.
+Um aplicativo web simples para ajudar você a acompanhar seu progresso no estudo de inglês.
 
 ## Funcionalidades
 
@@ -12,22 +12,15 @@ Um aplicativo web para ajudar você a acompanhar seu progresso no estudo de ingl
 
 ## Tecnologias
 
-- React
-- TypeScript
-- Tailwind CSS
-- GitHub Pages
+- HTML5
+- CSS3
+- JavaScript
 
 ## Como usar
 
 1. Acesse: https://ernanesa.github.io/English-Study-Tracker
-2. Crie sua conta ou faça login
-3. Comece a registrar seu progresso!
+2. Comece a registrar seu progresso!
 
 ## Desenvolvimento
 
-Para rodar o projeto localmente:
-
-```bash
-npm install
-npm run dev
-```
+Para rodar o projeto localmente, basta abrir o arquivo `index.html` em seu navegador.
