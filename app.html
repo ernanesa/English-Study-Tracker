@@ -5,84 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>English Study Tracker</title>
     <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E" />
+    <script>
+        // Verifica se o usuário está logado
+        if (!localStorage.getItem('isLoggedIn')) {
+            window.location.href = 'index.html';
+        }
+    </script>
 </head>
 <body>
-    <header>
-        <h1>English Study Tracker</h1>
-        <nav>
-            <ul>
-                <li><a href="#vocabulary">Vocabulário</a></li>
-                <li><a href="#study-time">Tempo de Estudo</a></li>
-                <li><a href="#skills">Habilidades</a></li>
-                <li><a href="#goals">Metas</a></li>
-            </ul>
-            <button onclick="logout()" class="logout-btn">Sair</button>
-        </nav>
-    </header>
+    <div class="container">
+        <header>
+            <h1>English Study Tracker</h1>
+            <nav>
+                <button id="homeBtn" class="active">Home</button>
+                <button id="progressBtn">Progresso</button>
+                <button id="logoutBtn" onclick="logout()">Sair</button>
+            </nav>
+        </header>
 
-    <main>
-        <section id="vocabulary">
-            <h2>Vocabulário</h2>
-            <div class="add-word">
-                <input type="text" id="new-word" placeholder="Nova palavra">
-                <input type="text" id="word-translation" placeholder="Tradução">
-                <button onclick="addWord()">Adicionar</button>
+        <main id="mainContent">
+            <div id="levelGrid" class="level-grid">
+                <!-- Níveis serão inseridos aqui dinamicamente -->
             </div>
-            <div id="word-list"></div>
-        </section>
+        </main>
 
-        <section id="study-time">
-            <h2>Tempo de Estudo</h2>
-            <div class="time-tracker">
-                <input type="number" id="study-hours" min="0" step="0.5" placeholder="Horas">
-                <input type="date" id="study-date">
-                <button onclick="addStudyTime()">Registrar</button>
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalContent"></div>
             </div>
-            <div id="study-history"></div>
-        </section>
-
-        <section id="skills">
-            <h2>Habilidades</h2>
-            <div class="skills-grid">
-                <div class="skill">
-                    <h3>Leitura</h3>
-                    <input type="range" id="reading" min="0" max="100" value="0">
-                    <span class="skill-value">0%</span>
-                </div>
-                <div class="skill">
-                    <h3>Escrita</h3>
-                    <input type="range" id="writing" min="0" max="100" value="0">
-                    <span class="skill-value">0%</span>
-                </div>
-                <div class="skill">
-                    <h3>Fala</h3>
-                    <input type="range" id="speaking" min="0" max="100" value="0">
-                    <span class="skill-value">0%</span>
-                </div>
-                <div class="skill">
-                    <h3>Compreensão</h3>
-                    <input type="range" id="listening" min="0" max="100" value="0">
-                    <span class="skill-value">0%</span>
-                </div>
-            </div>
-        </section>
-
-        <section id="goals">
-            <h2>Metas</h2>
-            <div class="add-goal">
-                <input type="text" id="new-goal" placeholder="Nova meta">
-                <input type="date" id="goal-date">
-                <button onclick="addGoal()">Adicionar</button>
-            </div>
-            <div id="goal-list"></div>
-        </section>
-    </main>
-
-    <footer>
-        <p>&copy; 2024 English Study Tracker</p>
-    </footer>
-
-    <script src="js/auth.js"></script>
+        </div>
+    </div>
     <script src="js/app.js"></script>
 </body>
-</html>
+</html> 
