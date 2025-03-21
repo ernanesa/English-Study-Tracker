@@ -6,10 +6,6 @@ Um aplicativo web simples para ajudar você a acompanhar seu progresso no estudo
 
 🔗 [Clique aqui para acessar o English Study Tracker](https://ernanesa.github.io/English-Study-Tracker)
 
-### Informações de Login
-- Usuário: `ernane`
-- Senha: `estudos`
-
 ## Funcionalidades
 
 - Acompanhamento de vocabulário
