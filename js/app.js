@@ -39,6 +39,7 @@ const unitTopics = [
 // Gerenciamento de estado
 let currentLevel = null;
 let currentUnit = null;
+let progressData = {}; // Para armazenar todos os dados de progresso
 
 // Elementos DOM
 const modal = document.getElementById('modal');
@@ -50,8 +51,8 @@ const progressBtn = document.getElementById('progressBtn');
 
 // Inicialização
 function init() {
-    renderLevels();
     loadProgress();
+    renderLevels();
     setupEventListeners();
 }
 
@@ -229,36 +230,188 @@ function showProgress() {
     levelGrid.appendChild(overallElement);
 }
 
-// Gerenciamento do localStorage
+// Gerenciamento do localStorage e JSON
 function loadUnitProgress(level, unit) {
     const key = `level${level}unit${unit}`;
+    
+    // Primeiro, tenta carregar do objeto progressData em memória
+    if (progressData[key]) {
+        return progressData[key];
+    }
+    
+    // Se não estiver em memória, tenta carregar do localStorage
     const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : Array(unitTopics.length).fill(false);
+    if (saved) {
+        const parsedData = JSON.parse(saved);
+        progressData[key] = parsedData;
+        return parsedData;
+    }
+    
+    // Se não existir, cria um novo array vazio
+    progressData[key] = Array(unitTopics.length).fill(false);
+    return progressData[key];
 }
 
 function saveUnitProgress(level, unit, progress) {
     const key = `level${level}unit${unit}`;
+    
+    // Salva no localStorage
     localStorage.setItem(key, JSON.stringify(progress));
+    
+    // Atualiza o objeto em memória
+    progressData[key] = progress;
+    
+    // Salva o arquivo JSON
+    saveProgressToJson();
+}
+
+// Funções para gerenciar o arquivo JSON
+function saveProgressToJson() {
+    // Cria um objeto com os dados combinados do localStorage
+    const progressJson = JSON.stringify(progressData);
+    
+    // Cria um Blob com os dados JSON
+    const blob = new Blob([progressJson], { type: 'application/json' });
+    
+    // Cria um link para download
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = URL.createObjectURL(blob);
+    a.download = 'english_progress.json';
+    document.body.appendChild(a);
+    
+    // Envia os dados para o servidor (simulação)
+    sendProgressToServer(progressJson);
+    
+    // Remove o elemento
+    document.body.removeChild(a);
+}
+
+function sendProgressToServer(progressData) {
+    // Aqui você implementaria uma chamada para um servidor que salvaria o JSON
+    // Como exemplo, vamos apenas simular isso com um console.log
+    console.log('Progresso enviado para o servidor:', progressData);
+    
+    // Exemplo de como seria usando fetch (comentado por não ter um servidor real):
+    /*
+    fetch('/api/save-progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: progressData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Progresso salvo com sucesso:', data);
+    })
+    .catch((error) => {
+        console.error('Erro ao salvar progresso:', error);
+    });
+    */
 }
 
 function loadProgress() {
-    // Carregar progresso salvo do localStorage
-    renderLevels();
+    // Primeiro, carrega qualquer progresso do localStorage para o objeto em memória
+    for (let i = 1; i <= 16; i++) {
+        for (let j = 1; j <= 6; j++) {
+            loadUnitProgress(i, j);
+        }
+    }
+    
+    // Tenta carregar do arquivo JSON (simulação)
+    loadProgressFromServer();
+}
+
+function loadProgressFromServer() {
+    // Aqui você implementaria uma chamada para um servidor que carregaria o JSON
+    // Como exemplo, vamos apenas simular isso com um console.log
+    console.log('Tentando carregar progresso do servidor...');
+    
+    // Exemplo de como seria usando fetch (comentado por não ter um servidor real):
+    /*
+    fetch('/api/load-progress')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Progresso carregado com sucesso:', data);
+        // Mescla os dados carregados com os dados em memória
+        progressData = { ...progressData, ...data };
+        // Atualiza a interface
+        renderLevels();
+    })
+    .catch((error) => {
+        console.error('Erro ao carregar progresso:', error);
+    });
+    */
+}
+
+// Adiciona funcionalidade para importar/exportar manualmente
+function exportProgress() {
+    const progressJson = JSON.stringify(progressData);
+    const blob = new Blob([progressJson], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = URL.createObjectURL(blob);
+    a.download = 'english_progress.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function importProgress(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            progressData = { ...progressData, ...importedData };
+            
+            // Atualiza o localStorage com os dados importados
+            Object.entries(importedData).forEach(([key, value]) => {
+                localStorage.setItem(key, JSON.stringify(value));
+            });
+            
+            renderLevels();
+            alert('Progresso importado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao importar progresso:', error);
+            alert('Erro ao importar arquivo. Verifique se é um JSON válido.');
+        }
+    };
+    reader.readAsText(file);
 }
 
 function closeModal() {
     modal.style.display = 'none';
 }
 
-// Função para fazer logout
 function logout() {
-    // Remove os dados de login do localStorage
     localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('username');
-    
-    // Redireciona para a página de login
     window.location.href = 'index.html';
 }
 
-// Inicialização do app
-document.addEventListener('DOMContentLoaded', init); 
+// Função para adicionar menu de importação/exportação
+function addImportExportMenu() {
+    const container = document.querySelector('.container');
+    
+    const menuDiv = document.createElement('div');
+    menuDiv.className = 'import-export-menu';
+    menuDiv.innerHTML = `
+        <button id="exportBtn">Exportar Progresso</button>
+        <label for="importFile" class="import-label">Importar Progresso</label>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+    `;
+    
+    container.appendChild(menuDiv);
+    
+    document.getElementById('exportBtn').addEventListener('click', exportProgress);
+    document.getElementById('importFile').addEventListener('change', importProgress);
+}
+
+// Adiciona a função ao init
+document.addEventListener('DOMContentLoaded', function() {
+    init();
+    addImportExportMenu();
+}); 
