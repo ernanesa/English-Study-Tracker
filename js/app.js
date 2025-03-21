@@ -1,4 +1,3 @@
-// Estrutura dos dados
 const englishLevels = {
     beginner: {
         name: 'Iniciante',
@@ -26,7 +25,6 @@ const englishLevels = {
     }
 };
 
-// Estrutura de uma unidade
 const unitTopics = [
     'Tópico 1',
     'Tópico 2',
@@ -36,15 +34,12 @@ const unitTopics = [
     'Aula Particular'
 ];
 
-// Gerenciamento de estado
 let currentLevel = null;
 let currentUnit = null;
-let progressData = {}; // Para armazenar todos os dados de progresso
+let progressData = {};
 
-// Constantes
 const PROGRESS_FILE = 'progress.json';
 
-// Elementos DOM
 const modal = document.getElementById('modal');
 const modalContent = document.getElementById('modalContent');
 const closeBtn = document.querySelector('.close');
@@ -55,14 +50,12 @@ const statusMessage = document.createElement('div');
 statusMessage.className = 'status-message';
 document.querySelector('.container').appendChild(statusMessage);
 
-// Inicialização
 function init() {
     loadProgress();
     renderLevels();
     setupEventListeners();
 }
 
-// Configuração dos event listeners
 function setupEventListeners() {
     closeBtn.addEventListener('click', closeModal);
     window.addEventListener('click', (e) => {
@@ -82,7 +75,6 @@ function setupEventListeners() {
     });
 }
 
-// Renderização dos níveis
 function renderLevels() {
     levelGrid.innerHTML = '';
     
@@ -95,7 +87,6 @@ function renderLevels() {
     });
 }
 
-// Criação do card de nível
 function createLevelCard(level, categoryName, progress) {
     const card = document.createElement('div');
     card.className = 'level-card';
@@ -114,7 +105,6 @@ function createLevelCard(level, categoryName, progress) {
     return card;
 }
 
-// Exibição dos detalhes do nível
 function showLevelDetails(level) {
     currentLevel = level;
     modalContent.innerHTML = `
@@ -126,7 +116,6 @@ function showLevelDetails(level) {
     modal.style.display = 'block';
 }
 
-// Criação do card de unidade
 function createUnitCard(unitNumber) {
     const unitProgress = loadUnitProgress(currentLevel, unitNumber);
     return `
@@ -140,7 +129,6 @@ function createUnitCard(unitNumber) {
     `;
 }
 
-// Exibição dos detalhes da unidade
 function showUnitDetails(unitNumber) {
     currentUnit = unitNumber;
     const unitProgress = loadUnitProgress(currentLevel, unitNumber);
@@ -162,7 +150,6 @@ function showUnitDetails(unitNumber) {
     `;
 }
 
-// Atualização do progresso
 function updateProgress(topicIndex) {
     const progress = loadUnitProgress(currentLevel, currentUnit);
     progress[topicIndex] = !progress[topicIndex];
@@ -174,14 +161,12 @@ function updateProgress(topicIndex) {
     renderLevels();
 }
 
-// Cálculo do progresso da unidade
 function calculateUnitProgress(unitProgress) {
     if (!unitProgress) return 0;
     const completed = unitProgress.filter(Boolean).length;
     return Math.round((completed / unitTopics.length) * 100);
 }
 
-// Cálculo do progresso do nível
 function calculateLevelProgress(level) {
     let totalProgress = 0;
     for (let unit = 1; unit <= 6; unit++) {
@@ -191,7 +176,6 @@ function calculateLevelProgress(level) {
     return Math.round(totalProgress / 6);
 }
 
-// Exibição do progresso geral
 function showProgress() {
     let totalProgress = 0;
     let totalLevels = 0;
@@ -236,60 +220,37 @@ function showProgress() {
     levelGrid.appendChild(overallElement);
 }
 
-// Gerenciamento do arquivo JSON
 function loadUnitProgress(level, unit) {
     const key = `level${level}unit${unit}`;
-    
-    // Primeiro, tenta carregar do objeto progressData em memória
+
     if (progressData[key]) {
         return progressData[key];
     }
-    
-    // Tenta carregar do localStorage
-    const saved = localStorage.getItem(key);
-    if (saved) {
-        const parsedData = JSON.parse(saved);
-        progressData[key] = parsedData;
-        return parsedData;
-    }
-    
-    // Se não existir em memória ou localStorage, retorna um novo array vazio
+
     progressData[key] = Array(unitTopics.length).fill(false);
     return progressData[key];
 }
 
 function saveUnitProgress(level, unit, progress) {
     const key = `level${level}unit${unit}`;
-    
-    // Atualiza o objeto em memória
+
     progressData[key] = progress;
-    
-    // Salva no localStorage
-    localStorage.setItem(key, JSON.stringify(progress));
-    
-    // Atualiza o objeto JSON completo
-    localStorage.setItem('progressDataComplete', JSON.stringify(progressData));
-    
-    // Exibe mensagem de sucesso
+
+    progressData[key] = progress;
+
     showStatusMessage('Progresso salvo com sucesso!', 'success');
     setTimeout(() => {
         hideStatusMessage();
     }, 2000);
 }
 
-// Removendo a exibição da mensagem de progresso carregado
 function loadProgress() {
     try {
-        showStatusMessage('Carregando progresso...', 'info');
-        
-        // Carrega do localStorage
-        const savedComplete = localStorage.getItem('progressDataComplete');
-        
+        const savedComplete = null;
+
         if (savedComplete) {
             progressData = JSON.parse(savedComplete);
-            // Removido: showStatusMessage('Progresso carregado com sucesso!', 'success');
         } else {
-            // Inicializa cada nível e unidade a partir do localStorage individual
             for (const category of Object.values(englishLevels)) {
                 for (const level of category.levels) {
                     for (let unit = 1; unit <= 6; unit++) {
@@ -297,22 +258,16 @@ function loadProgress() {
                     }
                 }
             }
-            showStatusMessage('Progresso inicial carregado', 'info');
         }
-        
+
         setTimeout(() => {
             hideStatusMessage();
         }, 2000);
     } catch (error) {
-        console.error('Erro ao carregar progresso:', error);
-        showStatusMessage('Erro ao carregar progresso. Usando dados vazios.', 'error');
-        
-        // Em caso de erro, inicializa com dados vazios
         progressData = {};
     }
 }
 
-// Funções auxiliares para mensagens de status
 function showStatusMessage(message, type) {
     statusMessage.textContent = message;
     statusMessage.className = `status-message ${type}`;
@@ -327,13 +282,11 @@ function closeModal() {
     modal.style.display = 'none';
 }
 
-// Função para fazer logout
 function logout() {
     localStorage.removeItem('isLoggedIn');
     window.location.href = 'index.html';
 }
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     init();
 });
