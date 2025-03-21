@@ -40,6 +40,7 @@ const unitTopics = [
 let currentLevel = null;
 let currentUnit = null;
 let progressData = {}; // Para armazenar todos os dados de progresso
+const JSON_FILE_PATH = 'progress.json'; // Caminho para o arquivo JSON local
 
 // Elementos DOM
 const modal = document.getElementById('modal');
@@ -230,129 +231,94 @@ function showProgress() {
     levelGrid.appendChild(overallElement);
 }
 
-// Gerenciamento do localStorage e JSON
+// Gerenciamento do armazenamento JSON
 function loadUnitProgress(level, unit) {
     const key = `level${level}unit${unit}`;
     
-    // Primeiro, tenta carregar do objeto progressData em memória
+    // Se já temos os dados em memória, use-os
     if (progressData[key]) {
         return progressData[key];
     }
     
-    // Se não estiver em memória, tenta carregar do localStorage
-    const saved = localStorage.getItem(key);
-    if (saved) {
-        const parsedData = JSON.parse(saved);
-        progressData[key] = parsedData;
-        return parsedData;
-    }
-    
-    // Se não existir, cria um novo array vazio
-    progressData[key] = Array(unitTopics.length).fill(false);
-    return progressData[key];
+    // Se não tivermos dados em memória, retorne um array vazio de tópicos
+    return Array(unitTopics.length).fill(false);
 }
 
 function saveUnitProgress(level, unit, progress) {
     const key = `level${level}unit${unit}`;
     
-    // Salva no localStorage
-    localStorage.setItem(key, JSON.stringify(progress));
-    
     // Atualiza o objeto em memória
     progressData[key] = progress;
     
-    // Salva o arquivo JSON
+    // Salva no arquivo JSON
     saveProgressToJson();
 }
 
 // Funções para gerenciar o arquivo JSON
 function saveProgressToJson() {
-    // Cria um objeto com os dados combinados do localStorage
+    // Salva o progresso no arquivo JSON local usando AJAX
     const progressJson = JSON.stringify(progressData);
     
-    // Cria um Blob com os dados JSON
-    const blob = new Blob([progressJson], { type: 'application/json' });
-    
-    // Cria um link para download
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = URL.createObjectURL(blob);
-    a.download = 'english_progress.json';
-    document.body.appendChild(a);
-    
-    // Envia os dados para o servidor (simulação)
-    sendProgressToServer(progressJson);
-    
-    // Remove o elemento
-    document.body.removeChild(a);
-}
-
-function sendProgressToServer(progressData) {
-    // Aqui você implementaria uma chamada para um servidor que salvaria o JSON
-    // Como exemplo, vamos apenas simular isso com um console.log
-    console.log('Progresso enviado para o servidor:', progressData);
-    
-    // Exemplo de como seria usando fetch (comentado por não ter um servidor real):
-    /*
-    fetch('/api/save-progress', {
+    fetch('save_progress.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: progressData
+        body: progressJson
     })
     .then(response => response.json())
     .then(data => {
         console.log('Progresso salvo com sucesso:', data);
+        // Podemos adicionar uma notificação visual aqui se quisermos
     })
     .catch((error) => {
         console.error('Erro ao salvar progresso:', error);
+        // Salvar no localStorage como fallback
+        localStorage.setItem('progressBackup', progressJson);
+        alert('Não foi possível salvar o progresso no servidor. Seus dados foram salvos localmente como backup.');
     });
-    */
 }
 
 function loadProgress() {
-    // Primeiro, carrega qualquer progresso do localStorage para o objeto em memória
-    for (let i = 1; i <= 16; i++) {
-        for (let j = 1; j <= 6; j++) {
-            loadUnitProgress(i, j);
+    // Tenta carregar o progresso do arquivo JSON local
+    fetch(JSON_FILE_PATH)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Arquivo de progresso não encontrado');
         }
-    }
-    
-    // Tenta carregar do arquivo JSON (simulação)
-    loadProgressFromServer();
-}
-
-function loadProgressFromServer() {
-    // Aqui você implementaria uma chamada para um servidor que carregaria o JSON
-    // Como exemplo, vamos apenas simular isso com um console.log
-    console.log('Tentando carregar progresso do servidor...');
-    
-    // Exemplo de como seria usando fetch (comentado por não ter um servidor real):
-    /*
-    fetch('/api/load-progress')
-    .then(response => response.json())
+        return response.json();
+    })
     .then(data => {
         console.log('Progresso carregado com sucesso:', data);
-        // Mescla os dados carregados com os dados em memória
-        progressData = { ...progressData, ...data };
+        // Atualiza o objeto em memória com os dados carregados
+        progressData = data;
         // Atualiza a interface
         renderLevels();
     })
     .catch((error) => {
-        console.error('Erro ao carregar progresso:', error);
+        console.error('Erro ao carregar progresso do arquivo:', error);
+        // Tenta carregar do localStorage como fallback
+        const backup = localStorage.getItem('progressBackup');
+        if (backup) {
+            try {
+                progressData = JSON.parse(backup);
+                console.log('Progresso carregado do backup local');
+                renderLevels();
+            } catch (e) {
+                console.error('Erro ao carregar backup:', e);
+            }
+        }
     });
-    */
 }
 
-// Adiciona funcionalidade para importar/exportar manualmente
+// Adiciona funcionalidade para exportar/importar manualmente
 function exportProgress() {
     const progressJson = JSON.stringify(progressData);
     const blob = new Blob([progressJson], { type: 'application/json' });
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = URL.createObjectURL(blob);
-    a.download = 'english_progress.json';
+    a.download = 'english_progress_export.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -368,10 +334,8 @@ function importProgress(event) {
             const importedData = JSON.parse(e.target.result);
             progressData = { ...progressData, ...importedData };
             
-            // Atualiza o localStorage com os dados importados
-            Object.entries(importedData).forEach(([key, value]) => {
-                localStorage.setItem(key, JSON.stringify(value));
-            });
+            // Salva os dados importados no servidor
+            saveProgressToJson();
             
             renderLevels();
             alert('Progresso importado com sucesso!');
