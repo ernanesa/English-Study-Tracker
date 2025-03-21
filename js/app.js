@@ -41,6 +41,9 @@ let currentLevel = null;
 let currentUnit = null;
 let progressData = {}; // Para armazenar todos os dados de progresso
 
+// Constantes
+const PROGRESS_FILE = 'progress.json';
+
 // Elementos DOM
 const modal = document.getElementById('modal');
 const modalContent = document.getElementById('modalContent');
@@ -48,6 +51,9 @@ const closeBtn = document.querySelector('.close');
 const levelGrid = document.getElementById('levelGrid');
 const homeBtn = document.getElementById('homeBtn');
 const progressBtn = document.getElementById('progressBtn');
+const statusMessage = document.createElement('div');
+statusMessage.className = 'status-message';
+document.querySelector('.container').appendChild(statusMessage);
 
 // Inicialização
 function init() {
@@ -230,7 +236,7 @@ function showProgress() {
     levelGrid.appendChild(overallElement);
 }
 
-// Gerenciamento do localStorage e JSON
+// Gerenciamento do arquivo JSON
 function loadUnitProgress(level, unit) {
     const key = `level${level}unit${unit}`;
     
@@ -239,7 +245,7 @@ function loadUnitProgress(level, unit) {
         return progressData[key];
     }
     
-    // Se não estiver em memória, tenta carregar do localStorage
+    // Tenta carregar do localStorage
     const saved = localStorage.getItem(key);
     if (saved) {
         const parsedData = JSON.parse(saved);
@@ -247,7 +253,7 @@ function loadUnitProgress(level, unit) {
         return parsedData;
     }
     
-    // Se não existir, cria um novo array vazio
+    // Se não existir em memória ou localStorage, retorna um novo array vazio
     progressData[key] = Array(unitTopics.length).fill(false);
     return progressData[key];
 }
@@ -255,107 +261,106 @@ function loadUnitProgress(level, unit) {
 function saveUnitProgress(level, unit, progress) {
     const key = `level${level}unit${unit}`;
     
-    // Salva no localStorage
-    localStorage.setItem(key, JSON.stringify(progress));
-    
     // Atualiza o objeto em memória
     progressData[key] = progress;
     
-    // Salva o arquivo JSON
-    saveProgressToJson();
+    // Salva no localStorage
+    localStorage.setItem(key, JSON.stringify(progress));
+    
+    // Atualiza o objeto JSON completo
+    localStorage.setItem('progressDataComplete', JSON.stringify(progressData));
+    
+    // Exibe mensagem de sucesso
+    showStatusMessage('Progresso salvo com sucesso!', 'success');
+    setTimeout(() => {
+        hideStatusMessage();
+    }, 2000);
 }
 
 // Funções para gerenciar o arquivo JSON
 function saveProgressToJson() {
-    // Cria um objeto com os dados combinados do localStorage
-    const progressJson = JSON.stringify(progressData);
-    
-    // Cria um Blob com os dados JSON
-    const blob = new Blob([progressJson], { type: 'application/json' });
-    
-    // Cria um link para download
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = URL.createObjectURL(blob);
-    a.download = 'english_progress.json';
-    document.body.appendChild(a);
-    
-    // Envia os dados para o servidor (simulação)
-    sendProgressToServer(progressJson);
-    
-    // Remove o elemento
-    document.body.removeChild(a);
-}
-
-function sendProgressToServer(progressData) {
-    // Aqui você implementaria uma chamada para um servidor que salvaria o JSON
-    // Como exemplo, vamos apenas simular isso com um console.log
-    console.log('Progresso enviado para o servidor:', progressData);
-    
-    // Exemplo de como seria usando fetch (comentado por não ter um servidor real):
-    /*
-    fetch('/api/save-progress', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: progressData
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Progresso salvo com sucesso:', data);
-    })
-    .catch((error) => {
-        console.error('Erro ao salvar progresso:', error);
-    });
-    */
+    try {
+        // Atualiza a interface para indicar o salvamento
+        showStatusMessage('Criando arquivo JSON...', 'info');
+        
+        // Cria um objeto com os dados
+        const progressJson = JSON.stringify(progressData, null, 2);
+        
+        // Cria um Blob e gera um link de download
+        const blob = new Blob([progressJson], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        // Cria um link e faz o download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = PROGRESS_FILE;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Limpa o objeto URL
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+        
+        showStatusMessage('Arquivo JSON criado com sucesso!', 'success');
+        setTimeout(() => {
+            hideStatusMessage();
+        }, 2000);
+    } catch (error) {
+        console.error('Erro ao criar arquivo JSON:', error);
+        showStatusMessage('Erro ao criar arquivo JSON. Tente novamente.', 'error');
+    }
 }
 
 function loadProgress() {
-    // Primeiro, carrega qualquer progresso do localStorage para o objeto em memória
-    for (let i = 1; i <= 16; i++) {
-        for (let j = 1; j <= 6; j++) {
-            loadUnitProgress(i, j);
+    try {
+        showStatusMessage('Carregando progresso...', 'info');
+        
+        // Carrega do localStorage
+        const savedComplete = localStorage.getItem('progressDataComplete');
+        
+        if (savedComplete) {
+            progressData = JSON.parse(savedComplete);
+            showStatusMessage('Progresso carregado com sucesso!', 'success');
+        } else {
+            // Inicializa cada nível e unidade a partir do localStorage individual
+            for (const category of Object.values(englishLevels)) {
+                for (const level of category.levels) {
+                    for (let unit = 1; unit <= 6; unit++) {
+                        loadUnitProgress(level, unit);
+                    }
+                }
+            }
+            showStatusMessage('Progresso inicial carregado', 'info');
         }
-    }
-    
-    // Tenta carregar do arquivo JSON (simulação)
-    loadProgressFromServer();
-}
-
-function loadProgressFromServer() {
-    // Aqui você implementaria uma chamada para um servidor que carregaria o JSON
-    // Como exemplo, vamos apenas simular isso com um console.log
-    console.log('Tentando carregar progresso do servidor...');
-    
-    // Exemplo de como seria usando fetch (comentado por não ter um servidor real):
-    /*
-    fetch('/api/load-progress')
-    .then(response => response.json())
-    .then(data => {
-        console.log('Progresso carregado com sucesso:', data);
-        // Mescla os dados carregados com os dados em memória
-        progressData = { ...progressData, ...data };
-        // Atualiza a interface
-        renderLevels();
-    })
-    .catch((error) => {
+        
+        setTimeout(() => {
+            hideStatusMessage();
+        }, 2000);
+    } catch (error) {
         console.error('Erro ao carregar progresso:', error);
-    });
-    */
+        showStatusMessage('Erro ao carregar progresso. Usando dados vazios.', 'error');
+        
+        // Em caso de erro, inicializa com dados vazios
+        progressData = {};
+    }
 }
 
-// Adiciona funcionalidade para importar/exportar manualmente
+// Funções auxiliares para mensagens de status
+function showStatusMessage(message, type) {
+    statusMessage.textContent = message;
+    statusMessage.className = `status-message ${type}`;
+    statusMessage.style.display = 'block';
+}
+
+function hideStatusMessage() {
+    statusMessage.style.display = 'none';
+}
+
+// Manual de importação/exportação
 function exportProgress() {
-    const progressJson = JSON.stringify(progressData);
-    const blob = new Blob([progressJson], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = URL.createObjectURL(blob);
-    a.download = 'english_progress.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    saveProgressToJson();
 }
 
 function importProgress(event) {
@@ -372,12 +377,16 @@ function importProgress(event) {
             Object.entries(importedData).forEach(([key, value]) => {
                 localStorage.setItem(key, JSON.stringify(value));
             });
+            localStorage.setItem('progressDataComplete', JSON.stringify(progressData));
             
             renderLevels();
-            alert('Progresso importado com sucesso!');
+            showStatusMessage('Progresso importado com sucesso!', 'success');
+            setTimeout(() => {
+                hideStatusMessage();
+            }, 2000);
         } catch (error) {
             console.error('Erro ao importar progresso:', error);
-            alert('Erro ao importar arquivo. Verifique se é um JSON válido.');
+            showStatusMessage('Erro ao importar arquivo. Verifique se é um JSON válido.', 'error');
         }
     };
     reader.readAsText(file);
@@ -387,6 +396,7 @@ function closeModal() {
     modal.style.display = 'none';
 }
 
+// Função para fazer logout
 function logout() {
     localStorage.removeItem('isLoggedIn');
     window.location.href = 'index.html';
@@ -399,18 +409,56 @@ function addImportExportMenu() {
     const menuDiv = document.createElement('div');
     menuDiv.className = 'import-export-menu';
     menuDiv.innerHTML = `
-        <button id="exportBtn">Exportar Progresso</button>
-        <label for="importFile" class="import-label">Importar Progresso</label>
+        <button id="syncBtn">Carregar Progresso</button>
+        <button id="exportBtn">Exportar JSON</button>
+        <label for="importFile" class="import-label">Importar JSON</label>
         <input type="file" id="importFile" accept=".json" style="display: none;">
     `;
     
     container.appendChild(menuDiv);
     
+    document.getElementById('syncBtn').addEventListener('click', syncProgress);
     document.getElementById('exportBtn').addEventListener('click', exportProgress);
     document.getElementById('importFile').addEventListener('change', importProgress);
 }
 
-// Adiciona a função ao init
+// Função para sincronizar o progresso com o localStorage
+function syncProgress() {
+    try {
+        showStatusMessage('Recarregando progresso...', 'info');
+        
+        // Recarrega do localStorage
+        const savedComplete = localStorage.getItem('progressDataComplete');
+        
+        if (savedComplete) {
+            progressData = JSON.parse(savedComplete);
+            renderLevels();
+            showStatusMessage('Progresso recarregado com sucesso!', 'success');
+        } else {
+            // Se não tiver dados completos, reinicializa
+            progressData = {};
+            // Inicializa cada nível e unidade a partir do localStorage individual
+            for (const category of Object.values(englishLevels)) {
+                for (const level of category.levels) {
+                    for (let unit = 1; unit <= 6; unit++) {
+                        loadUnitProgress(level, unit);
+                    }
+                }
+            }
+            renderLevels();
+            showStatusMessage('Progresso recarregado do zero', 'info');
+        }
+        
+        setTimeout(() => {
+            hideStatusMessage();
+        }, 2000);
+    } catch (error) {
+        console.error('Erro ao recarregar progresso:', error);
+        showStatusMessage('Erro ao recarregar progresso.', 'error');
+    }
+}
+
+// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     init();
     addImportExportMenu();
