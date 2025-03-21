@@ -40,7 +40,9 @@ const unitTopics = [
 let currentLevel = null;
 let currentUnit = null;
 let progressData = {}; // Para armazenar todos os dados de progresso
-const JSON_FILE_PATH = 'progress.json'; // Caminho para o arquivo JSON local
+
+// Constantes
+const PROGRESS_FILE = 'progress.json';
 
 // Elementos DOM
 const modal = document.getElementById('modal');
@@ -49,6 +51,9 @@ const closeBtn = document.querySelector('.close');
 const levelGrid = document.getElementById('levelGrid');
 const homeBtn = document.getElementById('homeBtn');
 const progressBtn = document.getElementById('progressBtn');
+const statusMessage = document.createElement('div');
+statusMessage.className = 'status-message';
+document.querySelector('.container').appendChild(statusMessage);
 
 // Inicialização
 function init() {
@@ -231,17 +236,18 @@ function showProgress() {
     levelGrid.appendChild(overallElement);
 }
 
-// Gerenciamento do armazenamento JSON
+// Gerenciamento do arquivo JSON
 function loadUnitProgress(level, unit) {
     const key = `level${level}unit${unit}`;
     
-    // Se já temos os dados em memória, use-os
+    // Primeiro, tenta carregar do objeto progressData em memória
     if (progressData[key]) {
         return progressData[key];
     }
     
-    // Se não tivermos dados em memória, retorne um array vazio de tópicos
-    return Array(unitTopics.length).fill(false);
+    // Se não existir em memória, retorna um novo array vazio
+    progressData[key] = Array(unitTopics.length).fill(false);
+    return progressData[key];
 }
 
 function saveUnitProgress(level, unit, progress) {
@@ -255,73 +261,92 @@ function saveUnitProgress(level, unit, progress) {
 }
 
 // Funções para gerenciar o arquivo JSON
-function saveProgressToJson() {
-    // Salva o progresso no arquivo JSON local usando AJAX
-    const progressJson = JSON.stringify(progressData);
-    
-    fetch('save_progress.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: progressJson
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Progresso salvo com sucesso:', data);
-        // Podemos adicionar uma notificação visual aqui se quisermos
-    })
-    .catch((error) => {
-        console.error('Erro ao salvar progresso:', error);
-        // Salvar no localStorage como fallback
-        localStorage.setItem('progressBackup', progressJson);
-        alert('Não foi possível salvar o progresso no servidor. Seus dados foram salvos localmente como backup.');
-    });
-}
-
-function loadProgress() {
-    // Tenta carregar o progresso do arquivo JSON local
-    fetch(JSON_FILE_PATH)
-    .then(response => {
+async function saveProgressToJson() {
+    try {
+        // Atualiza a interface para indicar o salvamento
+        showStatusMessage('Salvando progresso...', 'info');
+        
+        // Cria um objeto com os dados
+        const progressJson = JSON.stringify(progressData, null, 2);
+        
+        // Usando Fetch API para salvar no arquivo local na raiz do projeto
+        const response = await fetch('/save-progress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: progressJson
+        });
+        
         if (!response.ok) {
-            throw new Error('Arquivo de progresso não encontrado');
+            throw new Error('Falha ao salvar progresso');
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Progresso carregado com sucesso:', data);
-        // Atualiza o objeto em memória com os dados carregados
-        progressData = data;
-        // Atualiza a interface
-        renderLevels();
-    })
-    .catch((error) => {
-        console.error('Erro ao carregar progresso do arquivo:', error);
-        // Tenta carregar do localStorage como fallback
-        const backup = localStorage.getItem('progressBackup');
-        if (backup) {
-            try {
-                progressData = JSON.parse(backup);
-                console.log('Progresso carregado do backup local');
-                renderLevels();
-            } catch (e) {
-                console.error('Erro ao carregar backup:', e);
-            }
-        }
-    });
+        
+        showStatusMessage('Progresso salvo com sucesso!', 'success');
+        setTimeout(() => {
+            hideStatusMessage();
+        }, 2000);
+    } catch (error) {
+        console.error('Erro ao salvar progresso:', error);
+        showStatusMessage('Erro ao salvar progresso. Tente novamente.', 'error');
+    }
 }
 
-// Adiciona funcionalidade para exportar/importar manualmente
+async function loadProgress() {
+    try {
+        showStatusMessage('Carregando progresso...', 'info');
+        
+        // Usando Fetch API para carregar do arquivo JSON na raiz do projeto
+        const response = await fetch(PROGRESS_FILE);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                // Se o arquivo não existir, começamos com um progresso vazio
+                progressData = {};
+                showStatusMessage('Progresso inicial criado', 'info');
+                setTimeout(() => {
+                    hideStatusMessage();
+                }, 2000);
+                return;
+            }
+            throw new Error('Falha ao carregar progresso');
+        }
+        
+        const loadedData = await response.json();
+        progressData = loadedData;
+        
+        showStatusMessage('Progresso carregado com sucesso!', 'success');
+        setTimeout(() => {
+            hideStatusMessage();
+        }, 2000);
+    } catch (error) {
+        console.error('Erro ao carregar progresso:', error);
+        showStatusMessage('Erro ao carregar progresso. Usando dados vazios.', 'error');
+        
+        // Em caso de erro, inicializa com dados vazios
+        progressData = {};
+    }
+}
+
+// Funções auxiliares para mensagens de status
+function showStatusMessage(message, type) {
+    statusMessage.textContent = message;
+    statusMessage.className = `status-message ${type}`;
+    statusMessage.style.display = 'block';
+}
+
+function hideStatusMessage() {
+    statusMessage.style.display = 'none';
+}
+
+// Manual de importação/exportação
 function exportProgress() {
-    const progressJson = JSON.stringify(progressData);
-    const blob = new Blob([progressJson], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = URL.createObjectURL(blob);
-    a.download = 'english_progress_export.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    window.open(PROGRESS_FILE, '_blank');
+    
+    showStatusMessage('Arquivo de progresso aberto em nova aba!', 'success');
+    setTimeout(() => {
+        hideStatusMessage();
+    }, 2000);
 }
 
 function importProgress(event) {
@@ -329,19 +354,22 @@ function importProgress(event) {
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const importedData = JSON.parse(e.target.result);
             progressData = { ...progressData, ...importedData };
             
-            // Salva os dados importados no servidor
-            saveProgressToJson();
+            // Salva as alterações no arquivo JSON
+            await saveProgressToJson();
             
             renderLevels();
-            alert('Progresso importado com sucesso!');
+            showStatusMessage('Progresso importado com sucesso!', 'success');
+            setTimeout(() => {
+                hideStatusMessage();
+            }, 2000);
         } catch (error) {
             console.error('Erro ao importar progresso:', error);
-            alert('Erro ao importar arquivo. Verifique se é um JSON válido.');
+            showStatusMessage('Erro ao importar arquivo. Verifique se é um JSON válido.', 'error');
         }
     };
     reader.readAsText(file);
@@ -351,6 +379,7 @@ function closeModal() {
     modal.style.display = 'none';
 }
 
+// Função para fazer logout
 function logout() {
     localStorage.removeItem('isLoggedIn');
     window.location.href = 'index.html';
@@ -363,18 +392,48 @@ function addImportExportMenu() {
     const menuDiv = document.createElement('div');
     menuDiv.className = 'import-export-menu';
     menuDiv.innerHTML = `
-        <button id="exportBtn">Exportar Progresso</button>
+        <button id="syncBtn">Sincronizar Progresso</button>
+        <button id="exportBtn">Ver Arquivo JSON</button>
         <label for="importFile" class="import-label">Importar Progresso</label>
         <input type="file" id="importFile" accept=".json" style="display: none;">
     `;
     
     container.appendChild(menuDiv);
     
+    document.getElementById('syncBtn').addEventListener('click', syncProgress);
     document.getElementById('exportBtn').addEventListener('click', exportProgress);
     document.getElementById('importFile').addEventListener('change', importProgress);
 }
 
-// Adiciona a função ao init
+// Função para sincronizar o progresso com o arquivo
+async function syncProgress() {
+    try {
+        showStatusMessage('Sincronizando progresso...', 'info');
+        
+        // Carrega o progresso do arquivo JSON
+        const response = await fetch(`${PROGRESS_FILE}?_=${new Date().getTime()}`);
+        
+        if (!response.ok) {
+            throw new Error('Falha ao sincronizar progresso');
+        }
+        
+        const loadedData = await response.json();
+        progressData = loadedData;
+        
+        // Atualiza a interface
+        renderLevels();
+        
+        showStatusMessage('Progresso sincronizado com sucesso!', 'success');
+        setTimeout(() => {
+            hideStatusMessage();
+        }, 2000);
+    } catch (error) {
+        console.error('Erro ao sincronizar progresso:', error);
+        showStatusMessage('Erro ao sincronizar progresso.', 'error');
+    }
+}
+
+// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     init();
     addImportExportMenu();
